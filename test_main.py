@@ -189,6 +189,24 @@ def test_list_time_entries(test_data):
     assert len(response.json()) == 1
     assert response.json()[0]["task_id"] == task_id
 
+def test_get_time_entry_no_end_time(test_data):
+    _, task_data, _ = test_data
+    response = client.post("/api/tasks/", json=task_data)
+    task_id = response.json()["task_id"]
+    
+    response = client.post(f"/api/time_entries/{task_id}/start")
+    time_entry_id = response.json()["time_entry_id"]
+    assert response.status_code == 200
+
+    response = client.get(f"/api/time_entries/task/{task_id}/playing")
+    assert response.status_code == 200
+    
+    response = client.put(f"/api/time_entries/{time_entry_id}/stop")
+    assert response.status_code == 200
+
+    response = client.get(f"/api/time_entries/task/{task_id}/playing")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "No time entry without end time"
 
 # Run all tests
 if __name__ == '__main__':

@@ -229,6 +229,22 @@ async def list_time_entries(task_id: int, db: Session = Depends(get_db)):
     return [time_entry.to_response_model() for time_entry in time_entries]
 
 
+@app.get("/api/time_entries/task/{task_id}/playing", response_model=TimeEntryResponse)
+def get_time_entry(task_id: int, db: Session = Depends(get_db)):
+    """
+    Get the active time entry for a specific task.
+    """
+    task = db.query(Task).get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    active_time_entry = db.query(TimeEntry).filter(TimeEntry.task_id == task_id, TimeEntry.end_time == None).first()
+    if not active_time_entry:
+        raise HTTPException(status_code=404, detail="No time entry without end time")
+    
+    return active_time_entry.to_response_model()
+
+
 @app.get("/api/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     """

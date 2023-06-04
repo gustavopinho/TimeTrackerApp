@@ -21,10 +21,12 @@ interface TimeEntry {
 const TaskTimeEntries: React.FC<{ task: Task }> = ({ task }) => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [playing, setPlaying] = useState(false);
+  const [playingTimeEntry, setPlayingTimeEntry] = useState<TimeEntry | null>(null);
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
   useEffect(() => {
     fetchTimeEntries();
+    fetchTimeEntriesWithoutEndTime();
   }, [task]);
 
   useEffect(() => {
@@ -48,9 +50,21 @@ const TaskTimeEntries: React.FC<{ task: Task }> = ({ task }) => {
     }
   };
 
+  const fetchTimeEntriesWithoutEndTime = async () => {
+    try {
+      const response = await axios.get(`/api/time_entries/task/${task.task_id}/playing`);
+      setPlayingTimeEntry(response.data);
+      setPlaying(true);
+      setElapsedMinutes(calculateElapsedMinutes(response.data.start_time));
+    } catch (error) {
+      console.error('Failed to fetch time entries:', error);
+    }
+  };
+
   const addTimeEntry = async () => {
     try {
-      await axios.post(`/api/time_entries/${task.task_id}/start`);
+      const response = await axios.post(`/api/time_entries/${task.task_id}/start`);
+      setPlayingTimeEntry(response.data);
       fetchTimeEntries();
     } catch (error) {
       console.error('Failed to add time entry:', error);
@@ -69,9 +83,8 @@ const TaskTimeEntries: React.FC<{ task: Task }> = ({ task }) => {
   const handlePlayButtonClick = async () => {
     if (playing) {
       // Stop the current time entry
-      const lastTimeEntry = timeEntries[timeEntries.length - 1];
-      if (lastTimeEntry && !lastTimeEntry.end_time) {
-        await updateTimeEntry(lastTimeEntry.time_entry_id);
+      if (playingTimeEntry && !playingTimeEntry.end_time) {
+        await updateTimeEntry(playingTimeEntry.time_entry_id);
       }
     } else {
       // Start a new time entry
@@ -81,6 +94,13 @@ const TaskTimeEntries: React.FC<{ task: Task }> = ({ task }) => {
     // Toggle the playing state
     setPlaying(!playing);
     setElapsedMinutes(0);
+  };
+
+  const calculateElapsedMinutes = (startTime: string): number => {
+    const currentTime = new Date();
+    const timeDifference = currentTime.getTime() - new Date(startTime).getTime();
+    const elapsedMinutes = Math.floor(timeDifference / (1000 * 60));
+    return elapsedMinutes;
   };
 
   const renderPlayButton = () => {
