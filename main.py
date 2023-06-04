@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from database import Activity, Task, TimeEntry, SessionLocal
@@ -18,14 +19,7 @@ app = FastAPI()
 
 # API routes
 
-@app.get("/")
-async def read_root():
-    """
-    Welcome to the Time Tracker API!
-    """
-    return {"message": "Welcome to the Time Tracker API!"}
-
-@app.post("/activities/", status_code=201)
+@app.post("/api/activities/", status_code=201)
 def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
     """
     Create a new activity.
@@ -43,7 +37,7 @@ def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
     return new_activity.to_response_model()
 
 
-@app.get("/activities/{activity_id}/", response_model=ActivityResponse)
+@app.get("/api/activities/{activity_id}/", response_model=ActivityResponse)
 def get_activity(activity_id: int, db: Session = Depends(get_db)):
     """
     Get a specific activity by ID.
@@ -55,7 +49,7 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)):
     return activity.to_response_model()
 
 
-@app.put("/activities/{activity_id}/", response_model=ActivityResponse)
+@app.put("/api/activities/{activity_id}/", response_model=ActivityResponse)
 def update_activity(activity_id: int, activity: ActivityUpdate, db: Session = Depends(get_db)):
     """
     Update an existing activity.
@@ -73,7 +67,7 @@ def update_activity(activity_id: int, activity: ActivityUpdate, db: Session = De
     return db_activity.to_response_model()
 
 
-@app.delete("/activities/{activity_id}/", status_code=200)
+@app.delete("/api/activities/{activity_id}/", status_code=200)
 def delete_activity(activity_id: int, db: Session = Depends(get_db)):
     """
     Delete an activity.
@@ -85,7 +79,7 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.close()
 
-@app.get("/activities/", response_model=List[ActivityResponse])
+@app.get("/api/activities/", response_model=List[ActivityResponse])
 def list_activities(db: Session = Depends(get_db)):
     """
     List all activities.
@@ -95,7 +89,7 @@ def list_activities(db: Session = Depends(get_db)):
     return [activity.to_response_model() for activity in activities]
 
 
-@app.post("/tasks/", response_model=TaskResponse, status_code=201)
+@app.post("/api/tasks/", response_model=TaskResponse, status_code=201)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     """
     Create a new task.
@@ -117,7 +111,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     return new_task.to_response_model()
 
 
-@app.get("/tasks/{task_id}/", response_model=TaskResponse)
+@app.get("/api/tasks/{task_id}/", response_model=TaskResponse)
 def get_task(task_id: int, db: Session = Depends(get_db)):
     """
     Get a specific task by ID.
@@ -129,7 +123,7 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     return task.to_response_model()
 
 
-@app.put("/tasks/{task_id}/", response_model=TaskResponse)
+@app.put("/api/tasks/{task_id}/", response_model=TaskResponse)
 def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     """
     Update an existing task.
@@ -147,7 +141,7 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     return db_task.to_response_model()
 
 
-@app.delete("/tasks/{task_id}/", status_code=200)
+@app.delete("/api/tasks/{task_id}/", status_code=200)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     """
     Delete a task.
@@ -160,7 +154,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.close()
 
 
-@app.get("/tasks/activity/{activity_id}/", response_model=List[TaskResponse])
+@app.get("/api/tasks/activity/{activity_id}/", response_model=List[TaskResponse])
 async def list_tasks(activity_id: int, db: Session = Depends(get_db)):
     """
     List tasks of a specific activity.
@@ -171,7 +165,7 @@ async def list_tasks(activity_id: int, db: Session = Depends(get_db)):
     return [task.to_response_model() for task in tasks]
 
 
-@app.post("/time_entries/", response_model=TimeEntryResponse)
+@app.post("/api/time_entries/", response_model=TimeEntryResponse)
 def create_time_entry(time_entry: TimeEntryCreate, db: Session = Depends(get_db)):
     """
     Create a new time entry.
@@ -195,7 +189,7 @@ def create_time_entry(time_entry: TimeEntryCreate, db: Session = Depends(get_db)
     return new_time_entry.to_response_model()
 
 
-@app.get("/time_entries/{time_entry_id}/", response_model=TimeEntryResponse)
+@app.get("/api/time_entries/{time_entry_id}/", response_model=TimeEntryResponse)
 def get_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
     """
     Get a specific time entry by ID.
@@ -207,7 +201,7 @@ def get_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
     return time_entry.to_response_model()
 
 
-@app.get("/time_entries/", response_model=List[TimeEntryResponse])
+@app.get("/api/time_entries/", response_model=List[TimeEntryResponse])
 async def list_time_entries(task_id: int, db: Session = Depends(get_db)):
     """
     List time entries of a specific task.
@@ -218,14 +212,14 @@ async def list_time_entries(task_id: int, db: Session = Depends(get_db)):
     return [time_entry.to_response_model() for time_entry in time_entries]
 
 
-@app.get("/docs", include_in_schema=False)
+@app.get("/api/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     """
     Custom route for Swagger UI HTML.
     """
     return get_swagger_ui_html(openapi_url="/openapi.json", title="API Docs")
 
-@app.get("/openapi.json", include_in_schema=False)
+@app.get("/api/openapi.json", include_in_schema=False)
 async def get_openapi_json():
     """
     Get the OpenAPI schema in JSON format.
@@ -238,3 +232,6 @@ def custom_openapi():
     """
     if app.openapi_schema:
         return app.openapi_schema
+    
+
+app.mount("/", StaticFiles(directory="app-ui/out", html=True))
