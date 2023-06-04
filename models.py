@@ -14,15 +14,15 @@ class TaskResponse(BaseModel):
     task_id: Optional[int]
     activity_id: int
     name: str
-    start_time: datetime
-    end_time: datetime
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
     duration: float
 
 class TimeEntryResponse(BaseModel):
     time_entry_id: Optional[int]
     task_id: int
     start_time: datetime
-    end_time: datetime
+    end_time:  Optional[datetime]
 
 class ActivityCreate(BaseModel):
     name: str
@@ -37,8 +37,6 @@ class ActivityUpdate(BaseModel):
 class TaskCreate(BaseModel):
     activity_id: int
     name: str
-    start_time: datetime
-    end_time: datetime
 
 class TaskUpdate(BaseModel):
     name: str

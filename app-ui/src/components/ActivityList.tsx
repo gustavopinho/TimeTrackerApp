@@ -16,6 +16,7 @@ import {
 
 import AddActivityModal from './AddActivityModal';
 import UpdateActivityModal from './UpdateActivityModal';
+import TaskList from './TaskList';
 
 interface Activity {
   activity_id?: number;
@@ -194,10 +195,9 @@ const ActivityList: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      
       {selectedActivity && (
-        <Typography variant="h6" component="h2" gutterBottom>
-          Selected Activity: {selectedActivity.name}
-        </Typography>
+        <TaskList activity={selectedActivity} />
       )}
 
       <AddActivityModal

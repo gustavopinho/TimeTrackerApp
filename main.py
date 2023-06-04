@@ -100,8 +100,6 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     new_task = Task(
         activity_id=task.activity_id,
         name=task.name,
-        start_time=task.start_time,
-        end_time=task.end_time,
         duration=0.0
     )
     db.add(new_task)
@@ -165,29 +163,48 @@ async def list_tasks(activity_id: int, db: Session = Depends(get_db)):
     return [task.to_response_model() for task in tasks]
 
 
-@app.post("/api/time_entries/", response_model=TimeEntryResponse)
-def create_time_entry(time_entry: TimeEntryCreate, db: Session = Depends(get_db)):
+@app.post("/api/time_entries/{task_id}/start", response_model=TimeEntryResponse)
+def create_time_entry(task_id: int, db: Session = Depends(get_db)):
     """
     Create a new time entry.
     """
-    task = db.query(Task).get(time_entry.task_id)
+    task = db.query(Task).get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    start_time = time_entry.start_time
-    end_time = time_entry.end_time
-    duration = (end_time - start_time).total_seconds() / 3600.0
+    
+    start_time = datetime.now()
+    end_time = None
+    duration = None
+    
     new_time_entry = TimeEntry(
-        task_id=time_entry.task_id,
+        task_id=task.task_id,
         start_time=start_time,
         end_time=end_time,
         duration=duration
     )
+    
     db.add(new_time_entry)
     db.commit()
     db.refresh(new_time_entry)
     db.close()
     return new_time_entry.to_response_model()
 
+# Add a new endpoint to stop a time entry
+@app.put("/api/time_entries/{time_entry_id}/stop", response_model=TimeEntryResponse)
+def stop_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
+    """
+    Stop a time entry by ID.
+    """
+    time_entry = db.query(TimeEntry).get(time_entry_id)
+    if not time_entry:
+        raise HTTPException(status_code=404, detail="Time Entry not found")
+    
+    time_entry.end_time = datetime.now()
+    db.commit()
+    db.refresh(time_entry)
+    db.close()
+    
+    return time_entry.to_response_model()
 
 @app.get("/api/time_entries/{time_entry_id}/", response_model=TimeEntryResponse)
 def get_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
@@ -201,7 +218,7 @@ def get_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
     return time_entry.to_response_model()
 
 
-@app.get("/api/time_entries/", response_model=List[TimeEntryResponse])
+@app.get("/api/time_entries/task/{task_id}/", response_model=List[TimeEntryResponse])
 async def list_time_entries(task_id: int, db: Session = Depends(get_db)):
     """
     List time entries of a specific task.

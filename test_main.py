@@ -45,26 +45,26 @@ def test_data():
 # Activities
 def test_create_activity(test_data):
     activity_data, _, _ = test_data
-    response = client.post("/activities/", json=activity_data)
+    response = client.post("/api/activities/", json=activity_data)
     assert response.status_code == 201
     assert response.json()["name"] == activity_data["name"]
     assert response.json()["original_estimate"] == activity_data["original_estimate"]
 
 def test_get_activity(test_data):
     activity_data, _, _ = test_data
-    response = client.post("/activities/", json=activity_data)
+    response = client.post("/api/activities/", json=activity_data)
     activity_id = response.json()["activity_id"]
-    response = client.get(f"/activities/{activity_id}/")
+    response = client.get(f"/api/activities/{activity_id}/")
     assert response.status_code == 200
     assert response.json()["name"] == activity_data["name"]
     assert response.json()["original_estimate"] == activity_data["original_estimate"]
 
 def test_update_activity(test_data):
     activity_data, _, _ = test_data
-    response = client.post("/activities/", json=activity_data)
+    response = client.post("/api/activities/", json=activity_data)
     activity_id = response.json()["activity_id"]
     update_data = {"name": "Updated Activity", "original_estimate": 20.0, "remaining_hours": 10.0, "completed_hours": 5.0}
-    response = client.put(f"/activities/{activity_id}/", json=update_data)
+    response = client.put(f"/api/activities/{activity_id}/", json=update_data)
     assert response.status_code == 200
     assert response.json()["name"] == update_data["name"]
     assert response.json()["original_estimate"] == update_data["original_estimate"]
@@ -73,45 +73,45 @@ def test_update_activity(test_data):
 
 def test_delete_activity(test_data):
     activity_data, _, _ = test_data
-    response = client.post("/activities/", json=activity_data)
+    response = client.post("/api/activities/", json=activity_data)
     activity_id = response.json()["activity_id"]
-    response = client.delete(f"/activities/{activity_id}/")
+    response = client.delete(f"/api/activities/{activity_id}/")
     assert response.status_code == 200
-    response = client.delete(f"/activities/{activity_id}/")
+    response = client.delete(f"/api/activities/{activity_id}/")
     assert response.status_code == 404
 
 def test_list_activities(test_data):
     activity_data, _, _ = test_data
-    response = client.post("/activities/", json=activity_data)
-    response = client.get("/activities/")
+    response = client.post("/api/activities/", json=activity_data)
+    response = client.get("/api/activities/")
     assert response.status_code == 200
     assert len(response.json()) > 0
 
 # Tasks
 def test_create_task(test_data):
     _, task_data, _ = test_data
-    response = client.post("/tasks/", json=task_data)
+    response = client.post("/api/tasks/", json=task_data)
     assert response.status_code == 201
     assert response.json()["name"] == task_data["name"]
-    assert response.json()["start_time"] == task_data["start_time"]
-    assert response.json()["end_time"] == task_data["end_time"]
+    assert response.json()["start_time"] is None
+    assert response.json()["end_time"] is None
 
 def test_get_task(test_data):
     _, task_data, _ = test_data
-    response = client.post("/tasks/", json=task_data)
+    response = client.post("/api/tasks/", json=task_data)
     task_id = response.json()["task_id"]
-    response = client.get(f"/tasks/{task_id}/")
+    response = client.get(f"/api/tasks/{task_id}/")
     assert response.status_code == 200
     assert response.json()["name"] == task_data["name"]
-    assert response.json()["start_time"] == task_data["start_time"]
-    assert response.json()["end_time"] == task_data["end_time"]
+    assert response.json()["start_time"] is None
+    assert response.json()["end_time"] is None
 
 def test_update_task(test_data):
     _, task_data, _ = test_data
-    response = client.post("/tasks/", json=task_data)
+    response = client.post("/api/tasks/", json=task_data)
     task_id = response.json()["task_id"]
     update_data = {"name": "Updated Task", "start_time": "2023-01-01T12:00:00", "end_time": "2023-01-01T14:00:00", "duration": 2.0}
-    response = client.put(f"/tasks/{task_id}/", json=update_data)
+    response = client.put(f"/api/tasks/{task_id}/", json=update_data)
     assert response.status_code == 200
     assert response.json()["name"] == update_data["name"]
     assert response.json()["start_time"] == update_data["start_time"]
@@ -120,34 +120,75 @@ def test_update_task(test_data):
 
 def test_delete_task(test_data):
     _, task_data, _ = test_data
-    response = client.post("/tasks/", json=task_data)
+    response = client.post("/api/tasks/", json=task_data)
     task_id = response.json()["task_id"]
-    response = client.delete(f"/tasks/{task_id}/")
+    response = client.delete(f"/api/tasks/{task_id}/")
     assert response.status_code == 200
 
 def test_list_tasks(test_data):
     _, task_data, _ = test_data
-    response = client.post("/tasks/", json=task_data)
-    response = client.get(f"/tasks/activity/{task_data['activity_id']}/")
+    response = client.post("/api/tasks/", json=task_data)
+    response = client.get(f"/api/tasks/activity/{task_data['activity_id']}/")
     assert response.status_code == 200
     assert len(response.json()) > 1
 
-# # Time Entries
+## Time Entries
 def test_create_time_entry(test_data):
-    _, _, time_entry_data = test_data
-    response = client.post("/time_entries/", json=time_entry_data)
+    _, task_data, _ = test_data
+    response = client.post("/api/tasks/", json=task_data)
+    task_id = response.json()["task_id"]
+
+    response = client.post(f"/api/time_entries/{task_id}/start")
     assert response.status_code == 200
-    assert response.json()["start_time"] == time_entry_data["start_time"]
-    assert response.json()["end_time"] == time_entry_data["end_time"]
+    time_entry_id = response.json()["time_entry_id"]
+
+    response = client.get(f"/api/time_entries/{time_entry_id}/")
+    assert response.status_code == 200
+    assert response.json()["start_time"] is not None
+    assert response.json()["end_time"] is None
+
+def test_stop_time_entry(test_data):
+    _, task_data, _ = test_data
+    response = client.post("/api/tasks/", json=task_data)
+    task_id = response.json()["task_id"]
+
+    response = client.post(f"/api/time_entries/{task_id}/start")
+    assert response.status_code == 200
+    time_entry_id = response.json()["time_entry_id"]
+
+    response = client.put(f"/api/time_entries/{time_entry_id}/stop")
+    assert response.status_code == 200
+
+    response = client.get(f"/api/time_entries/{time_entry_id}/")
+    assert response.status_code == 200
+    assert response.json()["end_time"] is not None
 
 def test_get_time_entry(test_data):
-    _, _, time_entry_data = test_data
-    response = client.post("/time_entries/", json=time_entry_data)
-    time_entry_id = response.json()["time_entry_id"]
-    response = client.get(f"/time_entries/{time_entry_id}/")
+    _, task_data, _ = test_data
+    response = client.post("/api/tasks/", json=task_data)
+    task_id = response.json()["task_id"]
+
+    response = client.post(f"/api/time_entries/{task_id}/start")
     assert response.status_code == 200
-    assert response.json()["start_time"] == time_entry_data["start_time"]
-    assert response.json()["end_time"] == time_entry_data["end_time"]
+    time_entry_id = response.json()["time_entry_id"]
+
+    response = client.get(f"/api/time_entries/{time_entry_id}/")
+    assert response.status_code == 200
+    assert response.json()["task_id"] == task_id
+
+def test_list_time_entries(test_data):
+    _, task_data, _ = test_data
+    response = client.post("/api/tasks/", json=task_data)
+    task_id = response.json()["task_id"]
+
+    response = client.post(f"/api/time_entries/{task_id}/start")
+    assert response.status_code == 200
+
+    response = client.get(f"/api/time_entries/task/{task_id}/")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["task_id"] == task_id
+
 
 # Run all tests
 if __name__ == '__main__':

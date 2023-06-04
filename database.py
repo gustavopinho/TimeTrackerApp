@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from models import ActivityResponse, TaskResponse, TimeEntryResponse
 
@@ -33,8 +33,8 @@ class Task(Base):
     task_id = Column(Integer, primary_key=True)
     activity_id = Column(Integer, ForeignKey("activities.activity_id"))
     name = Column(String(255))
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
     duration = Column(Float)
 
     activity = relationship(Activity)
@@ -56,8 +56,8 @@ class TimeEntry(Base):
     time_entry_id = Column(Integer, primary_key=True)
     task_id = Column(Integer, ForeignKey("tasks.task_id"))
     start_time = Column(DateTime)
-    end_time = Column(DateTime)
-    duration = Column(Float)
+    end_time = Column(DateTime, nullable=True)
+    duration = Column(Float, nullable=True)
 
     task = relationship(Task)
 
