@@ -40,9 +40,6 @@ class TaskCreate(BaseModel):
 
 class TaskUpdate(BaseModel):
     name: str
-    start_time: datetime
-    end_time: datetime
-    duration: float
 
 class TimeEntryCreate(BaseModel):
     task_id: int

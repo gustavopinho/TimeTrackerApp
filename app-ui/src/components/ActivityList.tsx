@@ -1,22 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {
-  Container,
-  Typography,
-  Table,
-  TableContainer,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Button,
-  Snackbar,
-  Box
-} from '@mui/material';
-
-import AddActivityModal from './AddActivityModal';
-import UpdateActivityModal from './UpdateActivityModal';
-import TaskList from './TaskList';
+import { baseUrl } from '@/config';
+import { useRouter } from 'next/router';
 
 interface Activity {
   activity_id?: number;
@@ -28,213 +13,102 @@ interface Activity {
 
 const ActivityList: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [activityToUpdate, setActivityToUpdate] = useState<Activity | null>(null);
-
-  // Message 
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
-
-  // Add activity
-  const [openModalActivity, setOpenModalActivity] = useState(false);
-
-  // Update activity
-  const [openUpdateModalActivity, setOpenUpdateModalActivity] = useState(false);
+  const router = useRouter()
 
   useEffect(() => {
     fetchActivities();
   }, []);
 
-  const showMessage = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
-    setMessage(message);
-    setMessageType(type);
-  };
-
-  const handleCloseMessage = () => {
-    setMessage('');
-  };
-
+  // Actions
   const fetchActivities = async () => {
     try {
-      const response = await axios.get('/api/activities/');
+      const response = await axios.get(`${baseUrl}/api/activities/`);
       setActivities(response.data);
     } catch (error) {
       console.error('Failed to fetch activities:', error);
     }
   };
 
-  const addActivity = async (name: string, original_estimate: number) => {
-    const activityData = {
-      name: name,
-      original_estimate: original_estimate,
-    };
-
+  const deleteActivity = async (activityId: number | undefined) => {
     try {
-      const response = await axios.post('/api/activities/', activityData);
-      const newActivity = response.data;
-      setActivities([...activities, newActivity]);
-      showMessage('Activity added successfully!', 'success');
-    } catch (error) {
-      console.error('Failed to add activity:', error);
-      showMessage('Failed to add activity.', 'error');
-    }
-  };
-
-  const removeActivity = async (activityId: number | undefined) => {
-    try {
-      await axios.delete(`/api/activities/${activityId}/`);
+      await axios.delete(`${baseUrl}/api/activities/${activityId}/`);
       setActivities(activities.filter((activity) => activity.activity_id !== activityId));
-      setSelectedActivity(null);
-      showMessage('Activity removed successfully!', 'success');
     } catch (error) {
       console.error('Failed to remove activity:', error);
-      showMessage('Failed to remove activity.', 'error');
     }
-  };
-
-  const handleUpdateActivity = async (name: string, original_estimate: number, remaining_hours: number, completed_hours: number) => {
-    console.log(name, original_estimate, remaining_hours, completed_hours)
-    if (activityToUpdate) {
-      const updatedActivity = {
-        ...activityToUpdate,
-        name,
-        original_estimate,
-        remaining_hours,
-        completed_hours,
-      };
-
-      console.log(updatedActivity)
-
-      try {
-        await axios.put(`/api/activities/${activityToUpdate.activity_id}/`, updatedActivity);
-
-        fetchActivities();
-
-        handleCloseModalUpdateActivity();
-        showMessage('Activity updated successfully!', 'success');
-      } catch (error) {
-        console.error('Failed to update activity:', error);
-        showMessage('Failed to update activity.', 'error');
-      }
-    }
-  };
-
-  const selectActivity = (activity: Activity) => {
-    setSelectedActivity(activity);
-  };
-
-  const handleOpenModalActivity = () => {
-    setOpenModalActivity(true);
-  };
-
-  const handleCloseModalActivity = () => {
-    setOpenModalActivity(false);
-  };
-
-  const handleOpenModalUpdateActivity = (activity: Activity) => {
-    setActivityToUpdate(activity)
-    setOpenUpdateModalActivity(true);
-  };
-
-  const handleCloseModalUpdateActivity = () => {
-    setOpenUpdateModalActivity(false);
   };
 
   return (
-    <Container>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Activity List
-      </Typography>
-      <Button variant="contained" color="primary" size="small" onClick={handleOpenModalActivity}>
-        Add Activity
-      </Button>
-      <TableContainer style={{ maxHeight: 300 }}>
-        <Table stickyHeader size="small" aria-label="activity table" sx={{ border: '1px solid rgba(0, 0, 0, 0.12)' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell>Activity ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Original Estimate</TableCell>
-              <TableCell>Remaining Hours</TableCell>
-              <TableCell>Completed Hours</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+    <div className="p-4">
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold">Activity List</h2>
+
+        <div className="flex items-center justify-start mb-4 space-x-2">
+          <button
+            type="button"
+            className="px-3 py-1  text-white bg-blue-500 hover:bg-blue-600"
+            name="btnnew"
+            id="btnnew"
+            onClick={() => router.push('/activity/0')}>
+            New Activity
+          </button>
+          <input type="text" className="px-3 py-1 border border-gray-300" name="search" id="search" placeholder="Search" />
+          <button type="button" className="px-3 py-1 text-white bg-yellow-600 hover:bg-yellow-600" name="btnsearch" id="btnsearch">Search</button>
+        </div>
+      </div>
+      <div className="overflow-x-auto shadow-md">
+        <table className="min-w-full table-auto border-collapse border border-slate-200">
+          <thead className="font-bold">
+            <tr>
+              <th className="py-2 border border-slate-200 text-gray-700 text-sm font-bold">#ID</th>
+              <th className="py-2 border border-slate-200 text-left text-gray-700 text-sm font-bold">Name</th>
+              <th className="py-2 border border-slate-200 text-left text-gray-700 text-sm font-bold">Status</th>
+              <th className="py-2 border border-slate-200 text-gray-700 text-sm font-bold">Original</th>
+              <th className="py-2 border border-slate-200 text-gray-700 text-sm font-bold">Remaining</th>
+              <th className="py-2 border border-slate-200 text-gray-700 text-sm font-bold">Completed</th>
+              <th className="py-2 border border-slate-200 text-gray-700 text-sm font-bold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
             {activities.map((activity) => (
-              <TableRow
-                key={activity.activity_id}
-                selected={selectedActivity?.activity_id === activity.activity_id}
-                onClick={() => selectActivity(activity)}
-              >
-                <TableCell>{activity.activity_id}</TableCell>
-                <TableCell>{activity.name}</TableCell>
-                <TableCell>{activity.original_estimate}</TableCell>
-                <TableCell>{activity.remaining_hours}</TableCell>
-                <TableCell>{activity.completed_hours}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    onClick={() => handleOpenModalUpdateActivity(activity)}
-                  >
-                    Update
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="secondary"
-                    onClick={() => removeActivity(activity.activity_id)}
-                  >
+              <tr key={activity.activity_id}>
+                <td className="py-2 border border-slate-200 text-center">{activity.activity_id}</td>
+                <td className="py-2 border border-slate-200">{activity.name}</td>
+                <td className="py-2 border border-slate-200">Status</td>
+                <td className="py-2 border border-slate-200 text-center">{activity.original_estimate}h</td>
+                <td className="py-2 border border-slate-200 text-center">{activity.remaining_hours}h</td>
+                <td className="py-2 border border-slate-200 text-center">{activity.completed_hours}h</td>
+                <td className="flex py-2 border border-slate-200 justify-end space-x-1">
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-white bg-slate-500 rounded-md hover:bg-slate-600"
+                    onClick={() => router.push(`/tasks/${activity.activity_id}`)}>
+                    Tasks
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/activity/${activity.activity_id}`)}
+                    className="px-3 py-1 text-white bg-green-500 rounded-md hover:bg-green-600">
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-white bg-blue-500 rounded-md hover:bg-blue-600">
+                    Archive
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-white bg-red-500 rounded-md hover:bg-red-600"
+                    onClick={() => deleteActivity(activity.activity_id)}>
                     Remove
-                  </Button>
-                </TableCell>
-              </TableRow>
+                  </button>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      
-      {selectedActivity && (
-        <TaskList activity={selectedActivity} />
-      )}
-
-      <AddActivityModal
-        open={openModalActivity}
-        onClose={handleCloseModalActivity}
-        onAddActivity={addActivity}
-      />
-
-      <UpdateActivityModal
-        open={openUpdateModalActivity}
-        onClose={handleCloseModalUpdateActivity}
-        onUpdateActivity={handleUpdateActivity}
-        activity={activityToUpdate}
-      />
-
-      <Snackbar open={!!message} autoHideDuration={3000} onClose={handleCloseMessage}>
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: 400,
-            bgcolor: messageType === 'success' ? 'success.main' :
-              messageType === 'error' ? 'error.main' :
-                messageType === 'warning' ? 'warning.main' :
-                  messageType === 'info' ? 'info.main' : '',
-            color: messageType === 'success' ? 'success.contrastText' :
-              messageType === 'error' ? 'error.contrastText' :
-                messageType === 'warning' ? 'warning.contrastText' :
-                  messageType === 'info' ? 'info.contrastText' : '',
-            p: 2,
-            borderRadius: 4,
-          }}
-        >
-          <Typography variant="body1">{message}</Typography>
-        </Box>
-      </Snackbar>
-
-    </Container>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 

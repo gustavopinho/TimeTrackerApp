@@ -1,10 +1,12 @@
-import React from 'react';
 import ActivityList from '@/components/ActivityList';
+import React from 'react';
 
-const Home: React.FC = () => {
-  return (
-    <ActivityList />
-  );
+const Index: React.FC = () => {
+    return (
+        <>
+            <ActivityList />
+        </>
+    );
 };
 
-export default Home;
+export default Index;

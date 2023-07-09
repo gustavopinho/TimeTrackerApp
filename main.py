@@ -2,6 +2,7 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import Activity, Task, TimeEntry, SessionLocal
@@ -16,6 +17,19 @@ def get_db():
 
 # FastAPI setup
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # API routes
 
@@ -130,9 +144,6 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
     db_task.name = task.name
-    db_task.start_time = task.start_time
-    db_task.end_time = task.end_time
-    db_task.duration = task.duration
     db.commit()
     db.refresh(db_task)
     db.close()
