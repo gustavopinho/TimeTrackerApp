@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Boolean, create_engine, Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from models import ActivityResponse, TaskResponse, TimeEntryResponse
@@ -15,6 +15,10 @@ class Activity(Base):
     original_estimate = Column(Float)
     remaining_hours = Column(Float)
     completed_hours = Column(Float)
+    finalized = Column(Boolean)
+    price_per_hour = Column(Float)
+    money_received = Column(Boolean)
+
     tasks = relationship("Task", back_populates="activity")
 
     def to_response_model(self) -> ActivityResponse:
@@ -23,7 +27,10 @@ class Activity(Base):
             name=self.name,
             original_estimate=self.original_estimate,
             remaining_hours=self.remaining_hours,
-            completed_hours=self.completed_hours
+            completed_hours=self.completed_hours,
+            finalized=self.finalized,
+            price_per_hour=self.price_per_hour,
+            money_received=self.money_received
         )
 
 
@@ -36,6 +43,7 @@ class Task(Base):
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
     duration = Column(Float)
+    closed = Column(Boolean)
 
     activity = relationship(Activity)
 
