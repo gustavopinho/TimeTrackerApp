@@ -5,6 +5,8 @@ class ActivityCreateForm extends StatelessWidget {
   final TextEditingController originalEstimateController =
       TextEditingController();
 
+  ActivityCreateForm({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -14,15 +16,15 @@ class ActivityCreateForm extends StatelessWidget {
         children: [
           TextFormField(
             controller: nameController,
-            decoration: InputDecoration(labelText: 'Name'),
+            decoration: const InputDecoration(labelText: 'Name'),
           ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           TextFormField(
             controller: originalEstimateController,
-            decoration: InputDecoration(labelText: 'Original Estimate'),
+            decoration: const InputDecoration(labelText: 'Original Estimate'),
             keyboardType: TextInputType.number,
           ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -34,14 +36,14 @@ class ActivityCreateForm extends StatelessWidget {
                   };
                   Navigator.of(context).pop(formData);
                 },
-                child: Text('Confirm'),
+                child: const Text('Confirm'),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close the modal
                 },
-                child: Text('Cancel'),
-                style: ElevatedButton.styleFrom(primary: Colors.grey),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                child: const Text('Cancel'),
               ),
             ],
           ),

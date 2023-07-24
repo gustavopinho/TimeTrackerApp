@@ -26,25 +26,26 @@ class TaskResponse {
   final String? startTime;
   final String? endTime;
   final double? duration;
+  final bool? closed;
 
-  TaskResponse({
-    required this.taskId,
-    required this.activityId,
-    required this.name,
-    required this.startTime,
-    required this.endTime,
-    required this.duration,
-  });
+  TaskResponse(
+      {required this.taskId,
+      required this.activityId,
+      required this.name,
+      required this.startTime,
+      required this.endTime,
+      required this.duration,
+      required this.closed});
 
   factory TaskResponse.fromJson(Map<String, dynamic> json) {
     return TaskResponse(
-      taskId: json['task_id'],
-      activityId: json['activity_id'],
-      name: json['name'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      duration: json['duration'],
-    );
+        taskId: json['task_id'],
+        activityId: json['activity_id'],
+        name: json['name'],
+        startTime: json['start_time'],
+        endTime: json['end_time'],
+        duration: json['duration'],
+        closed: json['closed']);
   }
 }
 
@@ -81,6 +82,8 @@ class TaskListResponse {
       tasks: json.map((data) => TaskResponse.fromJson(data)).toList(),
     );
   }
+
+  get length => null;
 }
 
 class TimeEntryStartResponse {

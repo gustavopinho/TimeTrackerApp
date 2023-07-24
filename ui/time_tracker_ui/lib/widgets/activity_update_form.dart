@@ -1,29 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:time_tracker_ui/models/activity_model.dart';
 
-class ActivityUpdateForm extends StatelessWidget {
+import '../utils/decimal_text_input_formatter.dart';
+
+class ActivityUpdateForm extends StatefulWidget {
   final ActivityResponse activity;
-  final TextEditingController nameController;
-  final TextEditingController originalEstimateController;
-  final TextEditingController completedHoursController;
-  final TextEditingController pricePerHourController;
+
+  const ActivityUpdateForm({super.key, required this.activity});
+
+  @override
+  _ActivityUpdateFormState createState() => _ActivityUpdateFormState();
+}
+
+class _ActivityUpdateFormState extends State<ActivityUpdateForm> {
+  late TextEditingController _nameController;
+  late TextEditingController _originalEstimateController;
+  late TextEditingController _completedHoursController;
+  late TextEditingController _pricePerHourController;
 
   // Additional properties for the ActivityUpdate model
-  final TextEditingController finalizedController;
-  final TextEditingController moneyReceivedController;
+  late bool _finalized;
+  late bool _moneyReceived;
 
-  ActivityUpdateForm({required this.activity})
-      : nameController = TextEditingController(text: activity.name),
-        originalEstimateController =
-            TextEditingController(text: activity.originalEstimate.toString()),
-        completedHoursController =
-            TextEditingController(text: activity.completedHours.toString()),
-        pricePerHourController =
-            TextEditingController(text: activity.pricePerHour.toString()),
-        finalizedController =
-            TextEditingController(text: activity.finalized.toString()),
-        moneyReceivedController =
-            TextEditingController(text: activity.moneyReceived.toString());
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.activity.name);
+    _originalEstimateController = TextEditingController(
+        text: widget.activity.originalEstimate.toString());
+    _completedHoursController =
+        TextEditingController(text: widget.activity.completedHours.toString());
+    _pricePerHourController =
+        TextEditingController(text: widget.activity.pricePerHour.toString());
+    _finalized = widget.activity.finalized ?? false;
+    _moneyReceived = widget.activity.moneyReceived ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,38 +45,56 @@ class ActivityUpdateForm extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextFormField(
-            controller: nameController,
-            decoration: InputDecoration(labelText: 'Name'),
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Name'),
           ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           TextFormField(
-            controller: originalEstimateController,
-            decoration: InputDecoration(labelText: 'Original Estimate'),
+            controller: _originalEstimateController,
+            decoration: const InputDecoration(labelText: 'Original Estimate'),
+            inputFormatters: [DecimalTextInputFormatter(decimalRange: 2)],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 16.0),
+          TextFormField(
+            controller: _completedHoursController,
+            decoration: const InputDecoration(labelText: 'Completed Hours'),
+            inputFormatters: [DecimalTextInputFormatter(decimalRange: 2)],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 16.0),
+          TextFormField(
+            controller: _pricePerHourController,
+            decoration: const InputDecoration(labelText: 'Price Per Hour'),
             keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly
+            ],
           ),
-          SizedBox(height: 16.0),
-          TextFormField(
-            controller: completedHoursController,
-            decoration: InputDecoration(labelText: 'Completed Hours'),
-            keyboardType: TextInputType.number,
+          const SizedBox(height: 16.0),
+          Row(
+            children: [
+              const Text("Finalized?"),
+              Switch(
+                value: _finalized,
+                onChanged: (bool value) {
+                  setState(() {
+                    _finalized = value;
+                  });
+                },
+              ),
+              const Text("Money received?"),
+              Switch(
+                value: _moneyReceived,
+                onChanged: (bool value) {
+                  setState(() {
+                    _moneyReceived = value;
+                  });
+                },
+              ),
+            ],
           ),
-          SizedBox(height: 16.0),
-          TextFormField(
-            controller: pricePerHourController,
-            decoration: InputDecoration(labelText: 'Price Per Hour'),
-            keyboardType: TextInputType.number,
-          ),
-          SizedBox(height: 16.0),
-          TextFormField(
-            controller: finalizedController,
-            decoration: InputDecoration(labelText: 'Finalized'),
-          ),
-          SizedBox(height: 16.0),
-          TextFormField(
-            controller: moneyReceivedController,
-            decoration: InputDecoration(labelText: 'Money Received'),
-          ),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -72,29 +102,26 @@ class ActivityUpdateForm extends StatelessWidget {
                 onPressed: () {
                   // Collect the form data and return the updated activity when the Confirm button is pressed
                   final updatedActivity = ActivityUpdate(
-                    name: nameController.text.trim(),
+                    name: _nameController.text.trim(),
                     originalEstimate:
-                        double.parse(originalEstimateController.text.trim()),
+                        double.parse(_originalEstimateController.text.trim()),
                     completedHours:
-                        double.parse(completedHoursController.text.trim()),
+                        double.parse(_completedHoursController.text.trim()),
                     pricePerHour:
-                        double.parse(pricePerHourController.text.trim()),
-                    finalized:
-                        finalizedController.text.trim().toLowerCase() == 'true',
-                    moneyReceived:
-                        moneyReceivedController.text.trim().toLowerCase() ==
-                            'true',
+                        double.parse(_pricePerHourController.text.trim()),
+                    finalized: _finalized,
+                    moneyReceived: _moneyReceived,
                   );
                   Navigator.of(context).pop(updatedActivity);
                 },
-                child: Text('Confirm'),
+                child: const Text('Confirm'),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close the modal
                 },
-                child: Text('Cancel'),
-                style: ElevatedButton.styleFrom(primary: Colors.grey),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                child: const Text('Cancel'),
               ),
             ],
           ),

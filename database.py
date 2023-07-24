@@ -7,6 +7,18 @@ from models import ActivityResponse, TaskResponse, TimeEntryResponse
 Base = declarative_base()
 
 
+def get_formmated_datetime(date):
+    if date is not None:
+        return date.strftime("%Y-%m-%d %H:%M")
+    return None
+
+
+def get_round(value):
+    if value is not None:
+        return round(value, 2)
+    return None
+
+
 class Activity(Base):
     __tablename__ = "activities"
 
@@ -26,8 +38,8 @@ class Activity(Base):
             activity_id=self.activity_id,
             name=self.name,
             original_estimate=self.original_estimate,
-            remaining_hours=self.remaining_hours,
-            completed_hours=self.completed_hours,
+            remaining_hours=get_round(self.remaining_hours),
+            completed_hours=get_round(self.completed_hours),
             finalized=self.finalized,
             price_per_hour=self.price_per_hour,
             money_received=self.money_received
@@ -46,15 +58,17 @@ class Task(Base):
     closed = Column(Boolean)
 
     activity = relationship(Activity)
+    time_entries = relationship("TimeEntry", back_populates="task")
 
     def to_response_model(self) -> TaskResponse:
         return TaskResponse(
             task_id=self.task_id,
             activity_id=self.activity_id,
             name=self.name,
-            start_time=self.start_time,
-            end_time=self.end_time,
-            duration=self.duration
+            start_time=get_formmated_datetime(self.start_time),
+            end_time=get_formmated_datetime(self.end_time),
+            duration=round(self.duration, 2),
+            closed=self.closed
         )
 
 
@@ -62,7 +76,7 @@ class TimeEntry(Base):
     __tablename__ = "time_entries"
 
     time_entry_id = Column(Integer, primary_key=True)
-    task_id = Column(Integer, ForeignKey("tasks.task_id"))
+    task_id = Column(Integer, ForeignKey("tasks.task_id", ondelete="CASCADE"))
     start_time = Column(DateTime)
     end_time = Column(DateTime, nullable=True)
     duration = Column(Float, nullable=True)

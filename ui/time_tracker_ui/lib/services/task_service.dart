@@ -2,7 +2,7 @@ import 'package:time_tracker_ui/models/task_model.dart';
 import 'package:time_tracker_ui/repositories/task_repository.dart';
 
 class TaskService {
-  final Repository repository;
+  final TaskRepository repository;
 
   TaskService(this.repository);
 

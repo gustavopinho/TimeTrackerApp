@@ -1,9 +1,11 @@
-from typing import List
+from typing import Annotated, List
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 from database import Activity, Task, TimeEntry, SessionLocal
 from models import *
@@ -32,6 +34,64 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class UTF8ResponseMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Type"] = "application/json; charset=utf-8"
+        return response
+
+
+app.add_middleware(UTF8ResponseMiddleware)
+
+
+def convert_minutes_to_hours_and_minutes(total_minutes):
+    hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+    hours_with_minutes = hours + (remaining_minutes / 60)
+    return hours_with_minutes
+
+
+async def update_task_duration(task_id):
+
+    db = next(get_db())
+
+    task = db.query(Task).get(task_id)
+
+    seconds = 0
+    for time_entry in task.time_entries:
+        seconds = seconds + time_entry.duration
+
+    task.duration = seconds // 60
+
+    db.commit()
+    db.refresh(task)
+    db.close()
+
+    await update_activity_completed_hours(task.activity_id)
+
+
+async def update_activity_completed_hours(activity_id):
+
+    db = next(get_db())
+
+    activity = db.query(Activity).get(activity_id)
+
+    minutes = 0
+    for task in activity.tasks:
+        print("Task {}: {}".format(task.task_id, task.duration))
+        minutes = minutes + task.duration
+
+    activity.completed_hours = convert_minutes_to_hours_and_minutes(minutes)
+    activity.remaining_hours = activity.original_estimate - activity.completed_hours
+
+    print("Complete hours: {} Remain hours: {}".format(
+        activity.completed_hours, activity.remaining_hours))
+
+    db.commit()
+    db.refresh(activity)
+    db.close()
 
 # API routes
 
@@ -172,20 +232,15 @@ def close_task(task_id: int, db: Session = Depends(get_db)):
     db_task.end_time = datetime.now()
     db_task.closed = True
 
-    activity = db.query(Activity).get(db_task.activity_id)
-    activity.completed_hours = activity.completed_hours + db_task.duration / 60
-    activity.remaining_hours = activity.original_estimate - activity.completed_hours
-
     db.commit()
     db.refresh(db_task)
-    db.refresh(activity)
     db.close()
 
     return db_task.to_response_model()
 
 
 @app.delete("/api/tasks/{task_id}/", status_code=200)
-def delete_task(task_id: int, db: Session = Depends(get_db)):
+async def delete_task(task_id: int, db: Session = Depends(get_db)):
     """
     Delete a task.
     """
@@ -193,16 +248,11 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    activity = db.query(Activity).get(task.activity_id)
-
-    activity.completed_hours = activity.completed_hours - task.duration / 60
-    activity.remaining_hours = activity.original_estimate - activity.completed_hours
-
     db.delete(task)
     db.commit()
-
-    db.refresh(activity)
     db.close()
+
+    await update_activity_completed_hours(task.activity_id)
 
 
 @app.get("/api/tasks/activity/{activity_id}/", response_model=List[TaskResponse])
@@ -240,7 +290,8 @@ def create_time_entry(task_id: int, db: Session = Depends(get_db)):
     )
     db.add(new_time_entry)
 
-    task.start_time = start_time
+    if task.start_time is None:
+        task.start_time = start_time
 
     db.commit()
     db.refresh(new_time_entry)
@@ -252,7 +303,7 @@ def create_time_entry(task_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/api/time_entries/{time_entry_id}/stop", response_model=TimeEntryResponse)
-def stop_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
+async def stop_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
     """
     Stop a time entry by ID.
     """
@@ -263,17 +314,13 @@ def stop_time_entry(time_entry_id: int, db: Session = Depends(get_db)):
     time_entry.end_time = datetime.now()
 
     duration = time_entry.end_time - time_entry.start_time
-    time_entry.duration = duration.total_seconds() / 60
-
-    task = db.query(Task).get(time_entry.task_id)
-    task.duration = task.duration + time_entry.duration
-    task.end_time = datetime.now()
+    time_entry.duration = duration.total_seconds()
 
     db.commit()
     db.refresh(time_entry)
-    db.refresh(task)
-
     db.close()
+
+    await update_task_duration(time_entry.task_id)
 
     return time_entry.to_response_model()
 

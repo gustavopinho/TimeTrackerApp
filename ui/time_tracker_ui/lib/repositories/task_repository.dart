@@ -3,10 +3,10 @@ import 'dart:convert';
 
 import 'package:time_tracker_ui/models/task_model.dart';
 
-class Repository {
+class TaskRepository {
   final String baseUrl; // Replace this with your API base URL
 
-  Repository(this.baseUrl);
+  TaskRepository(this.baseUrl);
 
   Future<TaskResponse> createTask(TaskCreate task) async {
     final headers = {'Content-Type': 'application/json'};

@@ -23,6 +23,7 @@ class TaskResponse(BaseModel):
     start_time: Optional[datetime]
     end_time: Optional[datetime]
     duration: float
+    closed: Optional[bool]
 
 
 class TimeEntryResponse(BaseModel):
