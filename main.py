@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from sqlalchemy.orm import Session
 from starlette.requests import Request
+import uvicorn
 
 from database import Activity, Task, TimeEntry, SessionLocal
 from models import *
@@ -24,7 +25,10 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://localhost:5001",
+    "http://127.0.0.1:5001"
+    "*"
 ]
 
 app.add_middleware(
@@ -39,8 +43,9 @@ app.add_middleware(
 class UTF8ResponseMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        if response.headers["Content-Type"] == "application/json;":
-            response.headers["Content-Type"] = "application/json; charset=utf-8"
+        if "Content-Type" in response.headers:
+            if "application/json" in response.headers["Content-Type"]:
+                response.headers["Content-Type"] = "application/json; charset=utf-8"
         return response
 
 
@@ -405,4 +410,8 @@ def custom_openapi():
         return app.openapi_schema
 
 
-app.mount("/", StaticFiles(directory="app-ui/out", html=True))
+app.mount("/", StaticFiles(directory="ui/time_tracker_ui/build/web", html=True))
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=5001, log_level="info")

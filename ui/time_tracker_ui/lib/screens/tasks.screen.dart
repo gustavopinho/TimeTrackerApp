@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +26,7 @@ class _TasksPageState extends State<TasksPage> {
   TimeEntryStartResponse? _timeEntry;
 
   Timer? countUpTimer;
-  Duration myDuration = Duration(seconds: 0);
+  Duration myDuration = const Duration(seconds: 0);
 
   @override
   void initState() {

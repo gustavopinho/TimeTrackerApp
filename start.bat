@@ -1,0 +1,1 @@
+C:\Projects\TimeTrackerApp\.env\Scripts\activate && python .\main.py
