@@ -39,7 +39,8 @@ app.add_middleware(
 class UTF8ResponseMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        response.headers["Content-Type"] = "application/json; charset=utf-8"
+        if response.headers["Content-Type"] == "application/json;":
+            response.headers["Content-Type"] = "application/json; charset=utf-8"
         return response
 
 
@@ -181,6 +182,11 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     activity = db.query(Activity).get(task.activity_id)
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    if activity.finalized == True:
+        raise HTTPException(
+            status_code=400, detail="You can't create a task with finalized activity")
+
     new_task = Task(
         activity_id=task.activity_id,
         name=task.name,
@@ -248,6 +254,10 @@ async def delete_task(task_id: int, db: Session = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    if task.activity.finalized == True:
+        raise HTTPException(
+            status_code=400, detail="You can't delete a task with finalized activity")
+
     db.delete(task)
     db.commit()
     db.close()
@@ -277,6 +287,10 @@ def create_time_entry(task_id: int, db: Session = Depends(get_db)):
 
     if task.closed == True:
         raise HTTPException(status_code=400, detail="Task closed")
+
+    if task.activity.finalized == True:
+        raise HTTPException(
+            status_code=400, detail="You can't start a task with finalized activity")
 
     start_time = datetime.now()
     end_time = None

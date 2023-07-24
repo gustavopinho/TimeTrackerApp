@@ -10,7 +10,7 @@ class ActivityUpdateForm extends StatefulWidget {
   const ActivityUpdateForm({super.key, required this.activity});
 
   @override
-  _ActivityUpdateFormState createState() => _ActivityUpdateFormState();
+  State<ActivityUpdateForm> createState() => _ActivityUpdateFormState();
 }
 
 class _ActivityUpdateFormState extends State<ActivityUpdateForm> {
